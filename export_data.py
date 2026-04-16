@@ -227,8 +227,9 @@ def download_images(df: pd.DataFrame, images_dir: Path, gcs_client, skip_existin
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def main():
-    args = parse_args()
+def main(args=None):
+    if args is None:
+        args = parse_args()
 
     # Resolve config
     key_path = Path(args.key).expanduser().resolve()
