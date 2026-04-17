@@ -188,7 +188,7 @@ def fetch_dataframe(conn) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # GCS downloads
 # ---------------------------------------------------------------------------
-def download_images(df: pd.DataFrame, images_dir: Path, gcs_client, skip_existing: bool):
+def download_images(df: pd.DataFrame, images_dir: Path, gcs_client, skip_existing: bool, callback=None):
     """
     Iterate over the DataFrame, download each GCS image, and return a numpy
     array of local path strings (empty string where download failed or N/A).
@@ -217,9 +217,13 @@ def download_images(df: pd.DataFrame, images_dir: Path, gcs_client, skip_existin
             blob = gcs_client.bucket(bucket_name).blob(object_name)
             blob.download_to_filename(str(dest))
             print(f"[{i}/{n}] Downloaded: {dest.name}")
+            if callback:
+                callback(int((i/n)*100))
         except Exception as e:
             print(f"[{i}/{n}] WARN: Failed to download {cloud_uri}: {e}")
             local_paths[i - 1] = ""
+            if callback:
+                callback(int((i/n)*100))
 
     return local_paths
 
@@ -227,7 +231,7 @@ def download_images(df: pd.DataFrame, images_dir: Path, gcs_client, skip_existin
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-def main(args=None):
+def main(args=None, callback=None):
     if args is None:
         args = parse_args()
 
@@ -296,6 +300,7 @@ def main(args=None):
         conn.close()
 
     connector.close()
+
     print(f"Found {len(df)} rows.")
 
     if df.empty:
@@ -304,7 +309,7 @@ def main(args=None):
 
     # Download images; get back a numpy array of local path strings
     print()
-    local_paths = download_images(df, images_dir, gcs_client, args.skip_existing)
+    local_paths = download_images(df, images_dir, gcs_client, args.skip_existing, callback=callback)
 
     # Attach local paths as a new column and write CSV
     df["local_image_path"] = local_paths
