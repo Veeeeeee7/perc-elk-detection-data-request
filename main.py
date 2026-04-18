@@ -115,6 +115,7 @@ if __name__ == "__main__":
             print(f"Error: {e}")
         finally:
             downloading = False
+            good_request()
             root.after(0, lambda: progress_bar.place_forget())
             root.after(0, lambda: submit_request.config(state="normal"))
 
